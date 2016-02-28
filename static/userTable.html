@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bootstrap 实例 - 悬停表格</title>
+    <link href="http://libs.baidu.com/bootstrap/3.0.3/css/bootstrap.min.css" rel="stylesheet">
+    <script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+    <script src="http://libs.baidu.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/static/js/layer/layer.js"></script>
+	<link rel="stylesheet" type="text/css" href="/static/js/layer/skin/layer.css" id="layui_layer_skinlayercss">
+	<link rel="stylesheet" type="text/css" href="/static/js/layer/skin/layer.ext.css" id="layui_layer_skinlayerextcss">
+    <style>
+        .page12{
+            width:100%;
+            height:34px;
+            line-height:34px;
+        }
+        .control-user{
+            width:280px;
+            margin:0 auto;
+        }
+    </style>
+</head>
+<body>
+
+<table class="table table-hover">
+   <thead>
+      <tr>
+         <th style='text-align:center;'>用户</th>
+         <th style='text-align:center;'>密码</th>
+         <th style='text-align:center;'>操作</th>
+      </tr>
+   </thead>
+   <tbody id="userlist">
+   </tbody>
+</table>
+<div class="page12">
+<div id="last" class="btn" style="float:left;"><a href="javascript:pageIndex(-1)">上一页</a>   </div>
+<div id="next" style='float: right' class="btn"><a href="javascript:pageIndex(+1)">下一页</a></div>
+
+</div>
+<input type="hidden" id="page" value="0"/>
+<div class="control-user">
+<div class="control-group">
+    <label class="control-label" for="firstname">用户：</label>
+    <input type="text" style="width: 230px;" id="username" value="">
+</div>
+
+<div class="control-group">
+    <label class="control-label" for="firstname">密码：</label>
+    <input type="text" style="width: 230px;" id="password" value="">
+</div>
+
+<button type="button" class="btn" onclick="addUser()" style="float:right;">添加用户</button>
+    </div>
+</body>
+<script type="text/javascript">
+    $(function(){
+        pageIndex(0);
+    })
+    function pageIndex(page){
+		var pagesize = 5;
+        var pagebak = parseInt($("#page").val());
+
+        var pages = parseInt(pagebak+page);
+
+        if(pages==0){
+            $("#last").css("display", "none");
+        }else{
+            $("#last").css("display", "block");
+        }
+
+        if(page==-1 && pagebak==0){
+            return;
+        }
+
+        var start = pages*5;
+        var htmldata="";
+        $("#userlist").html(htmldata);
+        $.ajax({
+			type:'GET',
+			url:'/api/getusers',
+			datatype:'JSON',
+			data:{start:start,pagesize:pagesize},
+			success:function(data){
+                var datas = new Array();
+                datas =  data['data']
+                for(var i=0;i<datas.length;i++){
+                    htmldata += "<tr>"
+                            + "<td style='text-align:center;'>" + datas[i][1]+ "</td>"
+                            + "<td style='text-align:center;'>" + datas[i][2] + "</td>"
+                            + "<td class='td-actions' style='text-align:center;'><a href='javascript:del(" + datas[i][0] + ");' class='btn btn-danger btn-small'>删除</a></td>"
+                            + "</tr>";
+                }
+                if(datas.length<5){
+                    if(datas.length==0){
+                        htmldata += "<tr rowspan='3'><td rowspan='3'>无数据</td></tr> "
+                    }
+                    $("#next").css("display", "none");
+                }else{
+                    $("#next").css("display", "block");
+                }
+                $("#userlist").html(htmldata);
+			},
+			error:function(e){
+				layer.msg("查询失败，请稍后再试!", {icon: 2});
+			}
+		});
+        $("#page").val(pages);
+	}
+
+    function addUser(){
+        var username = $("#username").val();
+        var password = $("#password").val();
+
+        $.ajax({
+			type:'POST',
+			url:'/api/addusers',
+			datatype:'JSON',
+			data:{username:username,password:password},
+			success:function(data){
+                var datas = data['data'];
+                console.log(datas);
+                $("#username").val("");
+                $("#password").val("");
+                $("#page").val(0);
+                pageIndex(0);
+                layer.msg(datas, {icon: 7});
+			},
+			error:function(e){
+				layer.msg("添加失败，请稍后再试!", {icon: 2});
+			}
+		});
+    }
+
+    function del(id){
+         $.ajax({
+			type:'GET',
+			url:'/api/deluser',
+			datatype:'JSON',
+			data:{id:id},
+			success:function(data){
+                var datas = data['data'];
+                $("#page").val(0);
+                pageIndex(0);
+                layer.msg(datas, {icon: 7});
+			},
+			error:function(e){
+				layer.msg("删除失败，请稍后再试!", {icon: 2});
+			}
+		});
+    }
+</script>
+</html>
